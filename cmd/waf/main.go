@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"academ_waf/internal/api"
@@ -27,8 +28,12 @@ func getEnvOr(key, def string) string {
 }
 
 func main() {
-	dbPath := getEnvOr("WAF_DB", "/data/waf.db")
-	webDir := getEnvOr("WAF_WEB", "/app/web")
+	dbPath := resolveDBPath()
+	webDir := resolveWebDir()
+
+	if err := ensureDBDir(dbPath); err != nil {
+		log.Fatalf("db path: %v", err)
+	}
 
 	s, err := store.New(dbPath)
 	if err != nil {
@@ -70,6 +75,34 @@ func main() {
 	}()
 
 	log.Fatal(<-errCh)
+}
+
+func resolveDBPath() string {
+	if v := os.Getenv("WAF_DB"); v != "" {
+		return v
+	}
+	if _, err := os.Stat("/data"); err == nil {
+		return "/data/waf.db"
+	}
+	return filepath.Join("data", "waf.db")
+}
+
+func ensureDBDir(dbPath string) error {
+	dir := filepath.Dir(dbPath)
+	if dir == "." || dir == "" {
+		return nil
+	}
+	return os.MkdirAll(dir, 0o755)
+}
+
+func resolveWebDir() string {
+	if v := os.Getenv("WAF_WEB"); v != "" {
+		return v
+	}
+	if _, err := os.Stat("/app/web"); err == nil {
+		return "/app/web"
+	}
+	return "web"
 }
 
 func loadProxyRoutes(s *store.Store) []proxyRoute {
