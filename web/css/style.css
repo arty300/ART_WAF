@@ -114,10 +114,11 @@ tbody td { padding: 7px 10px; color: var(--text); white-space: nowrap; }
 .settings-card { max-width: 980px; background: linear-gradient(180deg, rgba(13,22,38,.95), rgba(12,19,31,.95)); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; box-shadow: 0 20px 45px rgba(0,0,0,.28); }
 .settings-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
 h3 { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
-.split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.service-form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 10px; }
-.service-form-row.four-cols { grid-template-columns: 1fr 1fr 1fr auto; }
-.service-form-row input { padding: 9px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; }
+.split-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.split-col-card { background: rgba(16, 27, 46, 0.55); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; min-height: 100%; }
+.service-form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin-bottom: 10px; }
+.service-form-row.four-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+.service-form-row input { min-width: 0; padding: 9px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; }
 .entity-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .entity-list li { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
 .entity-list li.empty { justify-content: center; color: var(--text-dim); background: transparent; border: 1px dashed var(--border); }
@@ -159,4 +160,8 @@ h3 { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
   .map-kpi-strip { top: 108px; flex-direction: column; }
   .kpi-card { min-width: 140px; }
   .map-toolbar { right: 12px; width: calc(100% - 24px); justify-content: space-between; }
+  .split-grid { grid-template-columns: 1fr; }
+  .service-form-row,
+  .service-form-row.four-cols { grid-template-columns: 1fr; }
+  .service-form-row .btn-primary { width: 100%; }
 }

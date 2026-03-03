@@ -235,7 +235,7 @@ export class Building {
         // Wall panel
         const shape = buildWallShape(e, chamferedHex, courtyard);
         const geo   = new THREE.ExtrudeGeometry(shape, extrudeOpts);
-        geo.rotateX(Math.PI / 2);
+        geo.rotateX(-Math.PI / 2);
 
         const mat = new THREE.MeshStandardMaterial({
           color:            COLOR_DEFAULT,
@@ -259,7 +259,7 @@ export class Building {
       for (let e = 0; e < EDGES; e++) {
         const tShape = buildTurretShape(e, chamferedHex);
         const tGeo   = new THREE.ExtrudeGeometry(tShape, turretOpts);
-        tGeo.rotateX(Math.PI / 2);
+        tGeo.rotateX(-Math.PI / 2);
         const tMat = new THREE.MeshStandardMaterial({
           color:     0x373a50,
           roughness: 0.5,
@@ -287,7 +287,7 @@ export class Building {
         hole.closePath();
         slabShape.holes.push(hole);
         const slabGeo = new THREE.ExtrudeGeometry(slabShape, { depth: FLOOR_GAP, bevelEnabled: false });
-        slabGeo.rotateX(Math.PI / 2);
+        slabGeo.rotateX(-Math.PI / 2);
         const slabMat = new THREE.MeshStandardMaterial({ color: 0x1e2030, roughness: 0.7 });
         const slab = new THREE.Mesh(slabGeo, slabMat);
         slab.position.y = yBase + FLOOR_H;
@@ -309,7 +309,7 @@ export class Building {
     roofHole.closePath();
     roofShape.holes.push(roofHole);
     const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 0.12, bevelEnabled: false });
-    roofGeo.rotateX(Math.PI / 2);
+    roofGeo.rotateX(-Math.PI / 2);
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x252838, roughness: 0.5 });
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = FLOORS * (FLOOR_H + FLOOR_GAP) - 0.01;
@@ -354,7 +354,7 @@ export class Building {
     const i1 = (edge * 2 + 2) % 12;
     const left = chamferedHex[i0];
     const right = chamferedHex[i1];
-    const center = new THREE.Vector3((left.x + right.x) / 2, 0, (left.y + right.y) / 2);
+    const center = new THREE.Vector3((left.x + right.x) / 2, 0, -((left.y + right.y) / 2));
     const outward = center.clone().normalize();
 
     const stepMat = new THREE.MeshStandardMaterial({ color: 0x767b8d, roughness: 0.75 });
