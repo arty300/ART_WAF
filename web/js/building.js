@@ -4,11 +4,11 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FLOORS       = 6;
 const EDGES        = 6;
-const FLOOR_H      = 0.38;
-const FLOOR_GAP    = 0.04;
-const R_OUTER      = 1.0;
-const CHAMFER      = 0.18;   // fraction of side length to cut at each corner
-const R_INNER      = 0.47;   // inner courtyard radius
+const FLOOR_H      = 0.36;
+const FLOOR_GAP    = 0.03;
+const R_OUTER      = 1.35;
+const CHAMFER      = 0.14;   // fraction of side length to cut at each corner
+const R_INNER      = 0.6;   // inner courtyard radius
 const INNER_SEGS   = 24;
 
 const COLOR_DEFAULT  = 0x2a2d3e;
@@ -142,6 +142,7 @@ export class Building {
     this.onPanelClick = onPanelClick;
     this.panels = {};   // key: `${floor}_${edge}` → THREE.Mesh
     this.hoveredPanel = null;
+    this.isNight = true;
 
     this._initScene();
     this._buildGeometry();
@@ -174,26 +175,35 @@ export class Building {
     this.controls.maxPolarAngle = Math.PI / 2.1;
 
     // Lights
-    const ambient = new THREE.AmbientLight(0x8090b0, 0.6);
-    this.scene.add(ambient);
+    this.ambient = new THREE.AmbientLight(0x8090b0, 0.6);
+    this.scene.add(this.ambient);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-    sun.position.set(3, 8, 4);
-    sun.castShadow = true;
-    this.scene.add(sun);
+    this.sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    this.sun.position.set(3, 8, 4);
+    this.sun.castShadow = true;
+    this.scene.add(this.sun);
 
-    const fill = new THREE.DirectionalLight(0x4466aa, 0.4);
-    fill.position.set(-4, 2, -3);
-    this.scene.add(fill);
+    this.fill = new THREE.DirectionalLight(0x4466aa, 0.4);
+    this.fill.position.set(-4, 2, -3);
+    this.scene.add(this.fill);
+
+    this.sunSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 20, 20),
+      new THREE.MeshBasicMaterial({ color: 0xffd54f }),
+    );
+    this.sunSphere.position.set(-2.8, 3.4, -3.5);
+    this.scene.add(this.sunSphere);
 
     // Ground
-    const groundGeo = new THREE.CircleGeometry(3.5, 36);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x111420, roughness: 0.9 });
+    const groundGeo = new THREE.CircleGeometry(4.4, 50);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1f472d, roughness: 0.95 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.01;
     ground.receiveShadow = true;
     this.scene.add(ground);
+
+    this._addEnvironment();
 
     // Courtyard floor
     const cyardGeo = new THREE.CircleGeometry(R_INNER * 0.95, INNER_SEGS);
@@ -298,12 +308,75 @@ export class Building {
     }
     roofHole.closePath();
     roofShape.holes.push(roofHole);
-    const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 0.04, bevelEnabled: false });
+    const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 0.12, bevelEnabled: false });
     roofGeo.rotateX(Math.PI / 2);
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x252838, roughness: 0.5 });
     const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = FLOORS * (FLOOR_H + FLOOR_GAP);
+    roof.position.y = FLOORS * (FLOOR_H + FLOOR_GAP) - 0.01;
     this.scene.add(roof);
+
+    this._addEntrance(chamferedHex);
+  }
+
+  _addEnvironment() {
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x2f8f46, roughness: 1 });
+    for (let i = 0; i < 120; i++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.06 + Math.random() * 0.05, 0.01), grassMat);
+      const a = Math.random() * Math.PI * 2;
+      const r = 2.2 + Math.random() * 1.8;
+      blade.position.set(Math.cos(a) * r, 0.02, Math.sin(a) * r);
+      this.scene.add(blade);
+    }
+
+    const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+    const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x2ea34e, roughness: 0.8 });
+    const positions = [
+      [2.7, 0, 2.1],
+      [-2.9, 0, 1.7],
+      [2.5, 0, -2.3],
+      [-2.6, 0, -2.4],
+    ];
+    positions.forEach(([x, y, z]) => {
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.45, 10), treeTrunkMat);
+      trunk.position.set(x, y + 0.22, z);
+      trunk.castShadow = true;
+      this.scene.add(trunk);
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 18), treeLeafMat);
+      crown.position.set(x, y + 0.55, z);
+      crown.castShadow = true;
+      this.scene.add(crown);
+    });
+  }
+
+  _addEntrance(chamferedHex) {
+    const edge = 1;
+    const i0 = edge * 2 + 1;
+    const i1 = (edge * 2 + 2) % 12;
+    const left = chamferedHex[i0];
+    const right = chamferedHex[i1];
+    const center = new THREE.Vector3((left.x + right.x) / 2, 0, (left.y + right.y) / 2);
+    const outward = center.clone().normalize();
+
+    const stepMat = new THREE.MeshStandardMaterial({ color: 0x767b8d, roughness: 0.75 });
+    for (let i = 0; i < 4; i++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(0.8 - i * 0.07, 0.06, 0.22), stepMat);
+      step.position.set(
+        center.x + outward.x * (0.35 + i * 0.12),
+        0.03 + i * 0.06,
+        center.z + outward.z * (0.35 + i * 0.12),
+      );
+      step.castShadow = true;
+      step.receiveShadow = true;
+      this.scene.add(step);
+    }
+
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(0.44, 0.58, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0x1f2a3f, roughness: 0.4, metalness: 0.3 }),
+    );
+    door.position.set(center.x + outward.x * 0.08, 0.32, center.z + outward.z * 0.08);
+    door.lookAt(center.x + outward.x, 0.3, center.z + outward.z);
+    this.scene.add(door);
   }
 
   _initEvents() {
@@ -418,5 +491,37 @@ export class Building {
   /** Returns panel mesh for given floor (1-based) and edge (0-based) */
   getPanel(floor, edge) {
     return this.panels[`${floor}_${edge}`] ?? null;
+  }
+
+  pulsePanel(floor, edge) {
+    const mesh = this.getPanel(floor, edge);
+    if (!mesh) return;
+    const base = mesh.material.emissiveIntensity;
+    mesh.material.emissive.setHex(0x60a5fa);
+    mesh.material.emissiveIntensity = 1;
+    setTimeout(() => {
+      mesh.material.emissiveIntensity = base;
+      mesh.material.emissive.setHex(0x000000);
+    }, 700);
+  }
+
+  setNightMode(isNight) {
+    this.isNight = isNight;
+    if (isNight) {
+      this.scene.background = new THREE.Color(0x0d0f1a);
+      this.scene.fog = new THREE.Fog(0x0d0f1a, 8, 20);
+      this.ambient.intensity = 0.6;
+      this.sun.intensity = 1.2;
+      this.fill.intensity = 0.4;
+      this.sunSphere.visible = false;
+      return;
+    }
+
+    this.scene.background = new THREE.Color(0x9cd7ff);
+    this.scene.fog = new THREE.Fog(0x9cd7ff, 10, 26);
+    this.ambient.intensity = 0.9;
+    this.sun.intensity = 1.55;
+    this.fill.intensity = 0.8;
+    this.sunSphere.visible = true;
   }
 }

@@ -26,24 +26,25 @@
 
 <div class="app app-hidden" id="app-shell">
 
-  <!-- Navigation -->
   <nav>
     <span class="logo">⬡ ACADEM WAF</span>
     <button class="tab-btn active" data-tab="map">Карта</button>
     <button class="tab-btn" data-tab="logs">
-      Логи <span class="badge" id="log-counter">0</span>
+      Все запросы <span class="badge" id="log-counter">0</span>
     </button>
+    <button class="tab-btn" data-tab="services">Сервисы</button>
     <button class="tab-btn" data-tab="settings">Настройки</button>
     <button class="tab-btn tab-logout" id="logout-btn">Выйти</button>
   </nav>
 
   <div class="content">
-
-    <!-- ── Map page ─────────────────────────────────────────────────────── -->
     <section id="page-map" class="page active">
+      <div class="map-toolbar">
+        <button id="toggle-day-night-btn" class="btn-ghost">🌙 Ночь</button>
+        <span class="map-hint">Кликните по стене здания или IP из логов для подсветки.</span>
+      </div>
       <canvas id="building-canvas"></canvas>
 
-      <!-- IP sidebar -->
       <aside id="sidebar">
         <div class="side-header">
           <span id="side-title">Выберите стену</span>
@@ -52,15 +53,14 @@
         <div class="side-body">
           <ul id="ip-list"></ul>
           <div class="side-add">
-            <input id="ip-input" type="text" placeholder="IP-адрес (напр. 192.168.1.10)" />
+            <input id="ip-input" type="text" placeholder="IP или CIDR (напр. 192.168.1.10 / 10.0.0.0/24)" />
             <input id="ip-label-input" type="text" placeholder="Метка (необязательно)" />
-            <button id="add-ip-btn" class="btn-primary">Добавить IP</button>
+            <button id="add-ip-btn" class="btn-primary">Добавить в стену</button>
           </div>
         </div>
       </aside>
     </section>
 
-    <!-- ── Logs page ─────────────────────────────────────────────────────── -->
     <section id="page-logs" class="page">
       <div class="log-toolbar">
         <span>Последние запросы (real-time)</span>
@@ -84,12 +84,39 @@
       </div>
     </section>
 
-    <!-- ── Settings page ─────────────────────────────────────────────────── -->
+    <section id="page-services" class="page">
+      <div class="settings-card wide-card">
+        <h2>Сервисы и пуллы IP</h2>
+
+        <div class="split-grid">
+          <div>
+            <h3>Пуллы IP для отслеживания</h3>
+            <div class="service-form-row">
+              <input id="pool-name" type="text" placeholder="Название пула" />
+              <input id="pool-cidr" type="text" placeholder="CIDR / IP, например 10.10.0.0/16" />
+              <button id="add-pool-btn" class="btn-primary" type="button">Добавить пул</button>
+            </div>
+            <ul id="pool-list" class="entity-list"></ul>
+          </div>
+
+          <div>
+            <h3>Проксируемые сервисы</h3>
+            <div class="service-form-row four-cols">
+              <input id="svc-name" type="text" placeholder="Имя сервиса" />
+              <input id="svc-upstream" type="text" placeholder="IP:PORT сервиса (напр. 10.0.0.5:8080)" />
+              <input id="svc-listen" type="text" placeholder="Наш IP:PORT (напр. 0.0.0.0:8081)" />
+              <button id="add-service-btn" class="btn-primary" type="button">Добавить сервис</button>
+            </div>
+            <ul id="service-list" class="entity-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="page-settings" class="page">
       <div class="settings-card">
         <h2>Настройки WAF</h2>
         <form id="settings-form" onsubmit="return false">
-
           <div class="form-row">
             <label>Proxy Target (upstream)</label>
             <input id="cfg-target" type="text" placeholder="http://localhost:3000" />
@@ -108,7 +135,6 @@
             <span class="form-hint">Адрес:порт веб-интерфейса. Требует перезапуска.</span>
           </div>
 
-
           <div class="form-row">
             <label>Proxy Routes (динамические правила)</label>
             <textarea id="cfg-routes" rows="6" placeholder='[{"listen":":8080","target":"http://localhost:3000"}]'></textarea>
@@ -120,8 +146,8 @@
       </div>
     </section>
 
-  </div><!-- .content -->
-</div><!-- .app -->
+  </div>
+</div>
 
 <div id="toast" class="toast"></div>
 

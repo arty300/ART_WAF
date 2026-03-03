@@ -135,7 +135,14 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		allowed := map[string]bool{"proxy_target": true, "proxy_listen": true, "proxy_routes": true, "admin_listen": true}
+		allowed := map[string]bool{
+			"proxy_target": true,
+			"proxy_listen": true,
+			"proxy_routes": true,
+			"admin_listen": true,
+			"ip_pools":     true,
+			"services":     true,
+		}
 		for k, v := range body {
 			if !allowed[k] {
 				continue
