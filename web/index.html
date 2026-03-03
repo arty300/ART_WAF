@@ -9,7 +9,24 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-<div class="app">
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <h1>Вход в ACADEM WAF</h1>
+    <p>Авторизуйтесь, чтобы открыть панель управления.</p>
+    <form id="login-form" class="login-form" onsubmit="return false">
+      <label for="login-username">Логин</label>
+      <input id="login-username" type="text" placeholder="admin" autocomplete="username" />
+
+      <label for="login-password">Пароль</label>
+      <input id="login-password" type="password" placeholder="Введите пароль" autocomplete="current-password" />
+
+      <button id="login-btn" class="btn-save" type="button">Войти</button>
+      <span class="login-hint">Демо-доступ: <b>admin / wafadmin</b></span>
+    </form>
+  </div>
+</div>
+
+<div class="app app-hidden" id="app-shell">
 
   <!-- Navigation -->
   <nav>
@@ -19,6 +36,7 @@
       Логи <span class="badge" id="log-counter">0</span>
     </button>
     <button class="tab-btn" data-tab="settings">Настройки</button>
+    <button class="tab-btn tab-logout" id="logout-btn">Выйти</button>
   </nav>
 
   <div class="content">

@@ -22,13 +22,85 @@ const logCounter   = document.getElementById('log-counter');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 const settingsForm = document.getElementById('settings-form');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
+const loginScreen = document.getElementById('login-screen');
+const appShell = document.getElementById('app-shell');
+const loginForm = document.getElementById('login-form');
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const loginUsername = document.getElementById('login-username');
+const loginPassword = document.getElementById('login-password');
+
+const AUTH_USER = 'admin';
+const AUTH_PASSWORD = 'wafadmin';
+const AUTH_KEY = 'academ_waf_auth';
 
 let sidebarState = { floor: null, edge: null };
 let logCount = 0;
 
+function showApp() {
+  loginScreen.classList.add('hidden');
+  appShell.classList.remove('app-hidden');
+}
+
+function showLogin() {
+  loginScreen.classList.remove('hidden');
+  appShell.classList.add('app-hidden');
+  loginPassword.value = '';
+}
+
+function isAuthorized() {
+  return localStorage.getItem(AUTH_KEY) === '1';
+}
+
+function setAuthorized(value) {
+  if (value) {
+    localStorage.setItem(AUTH_KEY, '1');
+  } else {
+    localStorage.removeItem(AUTH_KEY);
+  }
+}
+
+async function doLogin() {
+  const username = loginUsername.value.trim();
+  const password = loginPassword.value;
+
+  if (username !== AUTH_USER || password !== AUTH_PASSWORD) {
+    showToast('Неверный логин или пароль', true);
+    return;
+  }
+
+  setAuthorized(true);
+  showApp();
+  if (!wsClient) {
+    await initBuilding();
+    await loadHistory();
+  }
+  showToast('Добро пожаловать!');
+}
+
+function doLogout() {
+  setAuthorized(false);
+  location.reload();
+}
+
+loginBtn?.addEventListener('click', () => {
+  doLogin();
+});
+
+loginForm?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    doLogin();
+  }
+});
+
+logoutBtn?.addEventListener('click', () => {
+  doLogout();
+});
+
 // ─── Tab routing ──────────────────────────────────────────────────────────────
 tabs.forEach(btn => {
   btn.addEventListener('click', () => {
+    if (!btn.dataset.tab) return;
     tabs.forEach(t => t.classList.remove('active'));
     pages.forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
@@ -250,5 +322,10 @@ function showToast(msg, isError = false) {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
-initBuilding();
-loadHistory();
+if (isAuthorized()) {
+  showApp();
+  initBuilding();
+  loadHistory();
+} else {
+  showLogin();
+}
