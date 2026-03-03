@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"net"
 	"sync"
 	"time"
 
@@ -31,9 +32,15 @@ type FloorEdge struct {
 }
 
 type Store struct {
-	db    *sql.DB
-	mu    sync.RWMutex
-	cache map[string]FloorEdge
+	db        *sql.DB
+	mu        sync.RWMutex
+	cache     map[string]FloorEdge
+	cidrCache []cidrAssignment
+}
+
+type cidrAssignment struct {
+	net *net.IPNet
+	fe  FloorEdge
 }
 
 func New(path string) (*Store, error) {
@@ -43,7 +50,7 @@ func New(path string) (*Store, error) {
 	}
 	db.SetMaxOpenConns(1)
 
-	s := &Store{db: db, cache: make(map[string]FloorEdge)}
+	s := &Store{db: db, cache: make(map[string]FloorEdge), cidrCache: []cidrAssignment{}}
 	if err := s.migrate(); err != nil {
 		return nil, err
 	}
@@ -79,7 +86,9 @@ func (s *Store) migrate() error {
 			('proxy_target',  'http://localhost:3000'),
 			('proxy_listen',  ':8080'),
 			('proxy_routes',  ''),
-			('admin_listen',  ':9090');
+			('admin_listen',  ':9090'),
+			('ip_pools',      '[]'),
+			('services',      '[]');
 	`)
 	return err
 }
@@ -93,20 +102,46 @@ func (s *Store) loadCache() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.cache = make(map[string]FloorEdge)
+	s.cidrCache = []cidrAssignment{}
 	for rows.Next() {
 		var a Assignment
 		if err := rows.Scan(&a.Floor, &a.Edge, &a.IP); err != nil {
 			return err
 		}
-		s.cache[a.IP] = FloorEdge{Floor: a.Floor, Edge: a.Edge}
+		s.upsertCache(a)
 	}
 	return rows.Err()
+}
+
+func (s *Store) upsertCache(a Assignment) {
+	if _, n, err := net.ParseCIDR(a.IP); err == nil {
+		for i, existing := range s.cidrCache {
+			if existing.net.String() == n.String() {
+				s.cidrCache[i] = cidrAssignment{net: n, fe: FloorEdge{Floor: a.Floor, Edge: a.Edge}}
+				return
+			}
+		}
+		s.cidrCache = append(s.cidrCache, cidrAssignment{net: n, fe: FloorEdge{Floor: a.Floor, Edge: a.Edge}})
+		return
+	}
+	s.cache[a.IP] = FloorEdge{Floor: a.Floor, Edge: a.Edge}
 }
 
 func (s *Store) GetFloorEdge(ip string) (FloorEdge, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	fe, ok := s.cache[ip]
+	if ok {
+		return fe, true
+	}
+	parsed := net.ParseIP(ip)
+	if parsed != nil {
+		for _, entry := range s.cidrCache {
+			if entry.net.Contains(parsed) {
+				return entry.fe, true
+			}
+		}
+	}
 	return fe, ok
 }
 
@@ -163,7 +198,7 @@ func (s *Store) AddAssignment(a Assignment) error {
 		return err
 	}
 	s.mu.Lock()
-	s.cache[a.IP] = FloorEdge{Floor: a.Floor, Edge: a.Edge}
+	s.upsertCache(a)
 	s.mu.Unlock()
 	return nil
 }
@@ -177,6 +212,15 @@ func (s *Store) DeleteAssignment(floor, edge int, ip string) error {
 	}
 	s.mu.Lock()
 	delete(s.cache, ip)
+	if _, n, err := net.ParseCIDR(ip); err == nil {
+		filtered := make([]cidrAssignment, 0, len(s.cidrCache))
+		for _, entry := range s.cidrCache {
+			if entry.net.String() != n.String() {
+				filtered = append(filtered, entry)
+			}
+		}
+		s.cidrCache = filtered
+	}
 	s.mu.Unlock()
 	return nil
 }
