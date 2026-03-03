@@ -24,7 +24,7 @@ export class WSClient {
 
       // Flash building panel if mapped
       if (ev.floor > 0 && ev.edge >= 0) {
-        this.building.flash(ev.floor, ev.edge, ev.status);
+        this.building?.flash?.(ev.floor, ev.edge, ev.status);
       }
 
       this.onEvent(ev);
