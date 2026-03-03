@@ -78,6 +78,7 @@ func (s *Store) migrate() error {
 		INSERT OR IGNORE INTO config (key, value) VALUES
 			('proxy_target',  'http://localhost:3000'),
 			('proxy_listen',  ':8080'),
+			('proxy_routes',  ''),
 			('admin_listen',  ':9090');
 	`)
 	return err
