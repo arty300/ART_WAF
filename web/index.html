@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACADEM WAF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- Navigation -->
+  <nav>
+    <span class="logo">⬡ ACADEM WAF</span>
+    <button class="tab-btn active" data-tab="map">Карта</button>
+    <button class="tab-btn" data-tab="logs">
+      Логи <span class="badge" id="log-counter">0</span>
+    </button>
+    <button class="tab-btn" data-tab="settings">Настройки</button>
+  </nav>
+
+  <div class="content">
+
+    <!-- ── Map page ─────────────────────────────────────────────────────── -->
+    <section id="page-map" class="page active">
+      <canvas id="building-canvas"></canvas>
+
+      <!-- IP sidebar -->
+      <aside id="sidebar">
+        <div class="side-header">
+          <span id="side-title">Выберите стену</span>
+          <button id="close-side-btn" title="Закрыть">✕</button>
+        </div>
+        <div class="side-body">
+          <ul id="ip-list"></ul>
+          <div class="side-add">
+            <input id="ip-input" type="text" placeholder="IP-адрес (напр. 192.168.1.10)" />
+            <input id="ip-label-input" type="text" placeholder="Метка (необязательно)" />
+            <button id="add-ip-btn" class="btn-primary">Добавить IP</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ── Logs page ─────────────────────────────────────────────────────── -->
+    <section id="page-logs" class="page">
+      <div class="log-toolbar">
+        <span>Последние запросы (real-time)</span>
+        <button id="clear-logs-btn" class="btn-ghost">Очистить</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Время</th>
+              <th>IP</th>
+              <th>Местоположение</th>
+              <th>Метод</th>
+              <th>Путь</th>
+              <th>Статус</th>
+              <th>Задержка</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Settings page ─────────────────────────────────────────────────── -->
+    <section id="page-settings" class="page">
+      <div class="settings-card">
+        <h2>Настройки WAF</h2>
+        <form id="settings-form" onsubmit="return false">
+
+          <div class="form-row">
+            <label>Proxy Target (upstream)</label>
+            <input id="cfg-target" type="text" placeholder="http://localhost:3000" />
+            <span class="form-hint">Адрес сервера, которому пересылаются запросы.</span>
+          </div>
+
+          <div class="form-row">
+            <label>Proxy Listen</label>
+            <input id="cfg-proxy" type="text" placeholder=":8080" />
+            <span class="form-hint">Адрес:порт, на котором слушает WAF-прокси. Требует перезапуска.</span>
+          </div>
+
+          <div class="form-row">
+            <label>Admin Listen</label>
+            <input id="cfg-admin" type="text" placeholder=":9090" />
+            <span class="form-hint">Адрес:порт веб-интерфейса. Требует перезапуска.</span>
+          </div>
+
+          <button id="save-settings-btn" class="btn-save">Сохранить</button>
+        </form>
+      </div>
+    </section>
+
+  </div><!-- .content -->
+</div><!-- .app -->
+
+<div id="toast" class="toast"></div>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>
