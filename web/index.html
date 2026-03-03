@@ -92,6 +92,13 @@
             <span class="form-hint">Адрес:порт веб-интерфейса. Требует перезапуска.</span>
           </div>
 
+
+          <div class="form-row">
+            <label>Proxy Routes (динамические правила)</label>
+            <textarea id="cfg-routes" rows="6" placeholder='[{"listen":":8080","target":"http://localhost:3000"}]'></textarea>
+            <span class="form-hint">JSON-массив правил вида listen->target. Если заполнено, используется вместо Proxy Target/Proxy Listen. Требует перезапуска.</span>
+          </div>
+
           <button id="save-settings-btn" class="btn-save">Сохранить</button>
         </form>
       </div>

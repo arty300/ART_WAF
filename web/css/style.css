@@ -354,7 +354,8 @@ tbody td {
   letter-spacing: .5px;
 }
 
-.form-row input {
+.form-row input,
+.form-row textarea {
   padding: 9px 12px;
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -364,7 +365,15 @@ tbody td {
   outline: none;
   transition: border-color .15s;
 }
-.form-row input:focus { border-color: var(--accent); }
+.form-row input:focus,
+.form-row textarea:focus { border-color: var(--accent); }
+
+
+.form-row textarea {
+  resize: vertical;
+  min-height: 96px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
 
 .form-hint {
   font-size: 11px;

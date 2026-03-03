@@ -14,19 +14,28 @@ import (
 )
 
 type Proxy struct {
-	store *store.Store
-	hub   *hub.Hub
+	store  *store.Store
+	hub    *hub.Hub
+	target string
 }
 
 func New(s *store.Store, h *hub.Hub) *Proxy {
 	return &Proxy{store: s, hub: h}
 }
 
+func NewWithTarget(s *store.Store, h *hub.Hub, target string) *Proxy {
+	return &Proxy{store: s, hub: h, target: strings.TrimSpace(target)}
+}
+
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	target, err := p.store.GetConfig("proxy_target")
-	if err != nil || target == "" {
-		http.Error(w, "proxy target not configured", http.StatusBadGateway)
-		return
+	target := p.target
+	if target == "" {
+		cfgTarget, err := p.store.GetConfig("proxy_target")
+		if err != nil || cfgTarget == "" {
+			http.Error(w, "proxy target not configured", http.StatusBadGateway)
+			return
+		}
+		target = cfgTarget
 	}
 
 	targetURL, err := url.Parse(target)

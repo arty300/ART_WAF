@@ -1,16 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"academ_waf/internal/api"
 	"academ_waf/internal/hub"
 	"academ_waf/internal/proxy"
 	"academ_waf/internal/store"
 )
+
+type proxyRoute struct {
+	Listen string `json:"listen"`
+	Target string `json:"target"`
+}
 
 func getEnvOr(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -30,28 +37,31 @@ func main() {
 
 	h := hub.New()
 
-	proxyListen, _ := s.GetConfig("proxy_listen")
 	adminListen, _ := s.GetConfig("admin_listen")
-	if proxyListen == "" {
-		proxyListen = ":8080"
-	}
 	if adminListen == "" {
 		adminListen = ":9090"
 	}
 
-	p := proxy.New(s, h)
+	routes := loadProxyRoutes(s)
+
 	a := api.New(s, h, webDir)
 
-	fmt.Printf("WAF proxy   → http://0.0.0.0%s\n", proxyListen)
+	for _, route := range routes {
+		fmt.Printf("WAF proxy   %s -> %s\n", route.Listen, route.Target)
+	}
 	fmt.Printf("Admin UI    → http://0.0.0.0%s\n", adminListen)
 
-	errCh := make(chan error, 2)
+	errCh := make(chan error, len(routes)+1)
 
-	go func() {
-		if err := http.ListenAndServe(proxyListen, p); err != nil {
-			errCh <- fmt.Errorf("proxy: %w", err)
-		}
-	}()
+	for _, route := range routes {
+		route := route
+		p := proxy.NewWithTarget(s, h, route.Target)
+		go func() {
+			if err := http.ListenAndServe(route.Listen, p); err != nil {
+				errCh <- fmt.Errorf("proxy %s -> %s: %w", route.Listen, route.Target, err)
+			}
+		}()
+	}
 
 	go func() {
 		if err := http.ListenAndServe(adminListen, a.Handler()); err != nil {
@@ -60,4 +70,41 @@ func main() {
 	}()
 
 	log.Fatal(<-errCh)
+}
+
+func loadProxyRoutes(s *store.Store) []proxyRoute {
+	fallbackListen, _ := s.GetConfig("proxy_listen")
+	fallbackTarget, _ := s.GetConfig("proxy_target")
+	if fallbackListen == "" {
+		fallbackListen = ":8080"
+	}
+	if fallbackTarget == "" {
+		fallbackTarget = "http://localhost:3000"
+	}
+
+	raw, _ := s.GetConfig("proxy_routes")
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []proxyRoute{{Listen: fallbackListen, Target: fallbackTarget}}
+	}
+
+	var routes []proxyRoute
+	if err := json.Unmarshal([]byte(raw), &routes); err != nil {
+		log.Printf("invalid proxy_routes config, fallback to single route: %v", err)
+		return []proxyRoute{{Listen: fallbackListen, Target: fallbackTarget}}
+	}
+
+	clean := make([]proxyRoute, 0, len(routes))
+	for _, route := range routes {
+		listen := strings.TrimSpace(route.Listen)
+		target := strings.TrimSpace(route.Target)
+		if listen == "" || target == "" {
+			continue
+		}
+		clean = append(clean, proxyRoute{Listen: listen, Target: target})
+	}
+	if len(clean) == 0 {
+		return []proxyRoute{{Listen: fallbackListen, Target: fallbackTarget}}
+	}
+	return clean
 }

@@ -204,13 +204,29 @@ async function loadSettings() {
     document.getElementById('cfg-target').value  = cfg.proxy_target  ?? '';
     document.getElementById('cfg-proxy').value   = cfg.proxy_listen  ?? '';
     document.getElementById('cfg-admin').value   = cfg.admin_listen  ?? '';
+    document.getElementById('cfg-routes').value  = cfg.proxy_routes  ?? '';
   } catch { /* ignore */ }
 }
 
 saveSettingsBtn.addEventListener('click', async () => {
+  const routesText = document.getElementById('cfg-routes').value.trim();
+  if (routesText) {
+    try {
+      const parsed = JSON.parse(routesText);
+      if (!Array.isArray(parsed)) {
+        showToast('Proxy Routes должен быть JSON-массивом', true);
+        return;
+      }
+    } catch {
+      showToast('Некорректный JSON в Proxy Routes', true);
+      return;
+    }
+  }
+
   const body = {
     proxy_target:  document.getElementById('cfg-target').value.trim(),
     proxy_listen:  document.getElementById('cfg-proxy').value.trim(),
+    proxy_routes:  routesText,
     admin_listen:  document.getElementById('cfg-admin').value.trim(),
   };
   const res = await fetch('/api/config', {
@@ -219,7 +235,7 @@ saveSettingsBtn.addEventListener('click', async () => {
     body: JSON.stringify(body),
   });
   if (res.ok) {
-    showToast('Настройки сохранены. Смена портов вступит в силу после перезапуска.');
+    showToast('Настройки сохранены. Proxy Routes/порты применяются после перезапуска.');
   } else {
     showToast('Ошибка сохранения', true);
   }
