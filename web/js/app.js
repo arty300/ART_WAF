@@ -1,4 +1,3 @@
-import { Building } from './building.js';
 import { WSClient }  from './ws.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -42,9 +41,21 @@ tabs.forEach(btn => {
 async function initBuilding() {
   ipMapData = await fetchIPMap();
 
-  building = new Building(canvas, (floor, edge) => {
-    openSidebar(floor, edge);
-  });
+  try {
+    const { Building } = await import('./building.js');
+    building = new Building(canvas, (floor, edge) => {
+      openSidebar(floor, edge);
+    });
+    canvas.title = '';
+  } catch (err) {
+    console.error('Не удалось инициализировать 3D карту, включаю упрощённый режим:', err);
+    const { Building } = await import('./building-fallback.js');
+    building = new Building(canvas, (floor, edge) => {
+      openSidebar(floor, edge);
+    });
+    canvas.title = 'Включён упрощённый режим карты (без 3D).';
+    showToast('3D-карта недоступна, включён упрощённый режим.', true);
+  }
 
   wsClient = new WSClient(building, handleEvent);
 }
