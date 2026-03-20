@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>3D Building Monitor</title>
+    <style>
+        body { margin: 0; background: #0d0f1a; overflow: hidden; }
+        canvas { width: 100vw; height: 100vh; display: block; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h1 id="status">Загрузка модели...</h1>
+        <p id="info">Кликните по зданию</p>
+    </div>
+    <canvas id="building-canvas"></canvas>
+    
+    <!-- Vite сам обработает этот импорт -->
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
