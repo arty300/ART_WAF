@@ -1,0 +1,7 @@
+:8080 {
+    forward_auth localhost:5000 {
+        uri /check
+        header_up X-Real-IP {remote_host}
+    }
+    reverse_proxy localhost:3000  # Твое реальное приложение
+}
