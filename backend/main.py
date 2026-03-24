@@ -5,7 +5,7 @@ from typing import Optional
 
 
 engine = create_engine("postgresql://postgres:pass@localhost/waf_db")
-redis_client = Redis(host='redis', port=6379)
+redis_client = Redis(host='127.0.0.1', port=6379, decode_responses=True)
 app = FastAPI()
 
 class Ban(SQLModel, table=True):

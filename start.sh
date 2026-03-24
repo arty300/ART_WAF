@@ -27,6 +27,12 @@ case "$1" in
         pkill -f "go run main.go"
         pkill -f "uvicorn main:app"
         sudo caddy stop
+        sudo systemctl stop redis postgresql
+        echo "🛑 Остановка всех компонентов..."
+        sudo fuser -k 5000/tcp > /dev/null 2>&1
+        sudo fuser -k 8000/tcp > /dev/null 2>&1
+        sudo caddy stop > /dev/null 2>&1
+        echo "✅ Порты 5000, 8000 и Caddy свободны."
         echo "✅ Готово."
         ;;
 
